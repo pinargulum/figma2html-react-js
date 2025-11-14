@@ -1,11 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
-import NodeRenderer from "./renderer/NodeRenderer.jsx";
+import { useEffect, useMemo, useState } from "react";
+import NodeRenderer from "./renderer/NodeRenderer";
 import { FIGMA_FILE_KEY } from "./config";
 import { fetchFigmaFile } from "./services/figma";
-import "./App.css";
 
-function App() {
-  // ---- State ----
+export default function App() {
   const [figmaData, setFigmaData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -24,24 +22,6 @@ function App() {
     load();
   }, []);
 
-  // pick first canvas
-  function getCanvas(doc) {
-    const root = doc?.document;
-    if (!root) return null;
-    const children = root.children || [];
-    return children.find((node) => node.type === "CANVAS") ?? root;
-  }
-
-  // collect Frame children
-  function getFrames(canvas) {
-    if (!canvas) return [];
-    const children = canvas.children || [];
-    const frameNodes = children.filter((node) => node.type === "FRAME");
-    if (frameNodes.length) return frameNodes;
-    return children[0] ? [children[0]] : []; // use first child if there is only one
-  }
-
-  // ---- Memoized current frame ----
   const rootFrame = useMemo(() => {
     if (!figmaData) return null;
 
@@ -54,37 +34,61 @@ function App() {
 
     if (!canvas?.children) return null;
 
-    // İsimden bulmayı dene, yoksa ilk FRAME'i al
     return (
       canvas.children.find(
-        (n) => n.type === "FRAME" && n.name === "Sign in screen"
+        (n) => n.type === "FRAME" && n.name === "Sign in screen",
       ) ||
       canvas.children.find((n) => n.type === "FRAME") ||
       canvas.children[0]
     );
   }, [figmaData]);
 
-  // Main UI
+  // if thre is any loading errors
+  if (error) {
+    return (
+      <div style={{ color: "red", padding: 200 }}>
+        Error occured while loading the Figma file. Please try again later : {" "}
+        {error}
+      </div>
+    );
+  }
+
+  if (!rootFrame || !rootFrame.absoluteBoundingBox) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          color: "white",
+          alignItems: "center",
+          paddingTop: 200,
+        }}
+      >
+        Page is loading...
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
+        background: "#000",
         minHeight: "100vh",
-        background: "#121212",
-        color: "#ddd",
-        placeItems: "center",
+        padding: "32px 0",
+        boxSizing: "border-box",
       }}
     >
-      {/* top bar */}
-
-      <div style={{ position: "sticky", zIndex: 5, display: "flex" }}>
-              <label style={{ gap: "16px" }}>Frame
-       
-          <NodeRenderer node={rootFrame} />
-        
-        </label>
-      </div>
+      <label
+        style={{
+          display: "flex",
+          paddingBottom: 8,
+          color: "grey",
+          fontSize: 12,
+        }}
+      >
+        Frame
+      </label>
+      <NodeRenderer node={rootFrame} />
     </div>
   );
 }
-
-export default App;

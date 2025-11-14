@@ -26,16 +26,13 @@ export function styleFromNode(node, parentBox) {
 
   // fill background color, text color and gradient
   if (node.fills && node.fills.length > 0) {
-    // first fill
     const fill = node.fills.find((f) => f.visible !== false) ?? node.fills[0];
 
     if (fill) {
       if (fill.type === "SOLID" && fill.color) {
         if (isText) {
-          // Text color
           style.color = rgba(fill.color, fill.opacity);
         } else {
-          // Box backgroundColor
           style.backgroundColor = rgba(fill.color, fill.opacity);
         }
       }
@@ -70,7 +67,6 @@ export function styleFromNode(node, parentBox) {
     }
   }
 
-  // rounded corders / border radius
   // rounded corders / border radius
   let radiusValues = null;
 
