@@ -1,13 +1,28 @@
 import { useState, useEffect, useMemo } from "react";
 import NodeRenderer from "./renderer/NodeRenderer.jsx";
+import { FIGMA_FILE_KEY } from "./config";
+import { fetchFigmaFile } from "./services/figma";
 import "./App.css";
 
 function App() {
   // ---- State ----
-  const [figmaDoc, setFigmaDoc] = useState(null);
-  const [frames, setFrames] = useState([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [figmaData, setFigmaData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Figma REST API
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchFigmaFile(FIGMA_FILE_KEY);
+        setFigmaData(data);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      }
+    }
+
+    load();
+  }, []);
 
   // pick first canvas
   function getCanvas(doc) {
@@ -26,59 +41,29 @@ function App() {
     return children[0] ? [children[0]] : []; // use first child if there is only one
   }
 
-  // load Figma json
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        setErrorMsg("");
-
-        const response = await fetch("/figma.json");
-        if (!response.ok) {
-          throw new Error(`Failled to load figma.json" (${response.status})`);
-        }
-        const data = await response.json();
-        if (cancelled) return;
-
-        setFigmaDoc(data);
-
-        const canvas = getCanvas(data);
-        const frameNodes = getFrames(canvas);
-        setFrames(frameNodes);
-        setSelectedIndex(0);
-      } catch (err) {
-        if (!cancelled) {
-          console.error("Error while loading figma.json", err);
-          setErrorMsg(String(err?.message || err));
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   // ---- Memoized current frame ----
-  const currentFrame = useMemo(() => {
-    if (!figmaDoc || frames.length === 0) return null;
-    const idx = Math.max(0, Math.min(selectedIndex, frames.length - 1));
-    return frames[idx] ?? null;
-  }, [figmaDoc, frames, selectedIndex]);
+  const rootFrame = useMemo(() => {
+    if (!figmaData) return null;
 
-  // ---- Error and loading states ----
-  if (errorMsg) {
+    const document = figmaData.document;
+    if (!document?.children) return null;
+
+    const canvas =
+      document.children.find((n) => n.type === "CANVAS") ||
+      document.children[0];
+
+    if (!canvas?.children) return null;
+
+    // İsimden bulmayı dene, yoksa ilk FRAME'i al
     return (
-      <div style={{ padding: 16, color: "#c33" }}>
-        <b>Error:</b> {errorMsg}
-      </div>
+      canvas.children.find(
+        (n) => n.type === "FRAME" && n.name === "Sign in screen"
+      ) ||
+      canvas.children.find((n) => n.type === "FRAME") ||
+      canvas.children[0]
     );
-  }
-  if (!figmaDoc)
-    return <div style={{ padding: 16 }}>Loading Figma File...</div>;
-  if (!currentFrame) return <div style={{ padding: 16 }}> No Frame Found.</div>;
+  }, [figmaData]);
+
   // Main UI
   return (
     <div
@@ -94,7 +79,7 @@ function App() {
       <div style={{ position: "sticky", zIndex: 5, display: "flex" }}>
               <label style={{ gap: "16px" }}>Frame
        
-          <NodeRenderer node={currentFrame} />
+          <NodeRenderer node={rootFrame} />
         
         </label>
       </div>
