@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import NodeRenderer from "./renderer/NodeRenderer";
-import { FIGMA_FILE_KEY } from "./config";
-import { fetchFigmaFile } from "./services/figma";
+//import { FIGMA_FILE_KEY } from "./config";
+//import { fetchFigmaFile } from "./services/figma";
+import figmaJson from "./figma.json";
 
 export default function App() {
   const [figmaData, setFigmaData] = useState(null);
@@ -9,9 +10,10 @@ export default function App() {
 
   // Figma REST API
   useEffect(() => {
-    async function load() {
+    function load() {
       try {
-        const data = await fetchFigmaFile(FIGMA_FILE_KEY);
+        //const data = await fetchFigmaFile(FIGMA_FILE_KEY);
+        const data = figmaJson;
         setFigmaData(data);
       } catch (err) {
         console.error(err);
@@ -47,7 +49,7 @@ export default function App() {
   if (error) {
     return (
       <div style={{ color: "red", padding: 200 }}>
-        Error occured while loading the Figma file. Please try again later : {" "}
+        Error occured while loading the Figma file. Please try again later :{" "}
         {error}
       </div>
     );
