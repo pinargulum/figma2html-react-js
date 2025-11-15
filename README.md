@@ -49,7 +49,7 @@ Live Demo
 
 A fully working version of the project is deployed via GitHub Pages and can be viewed here:
 
-[Live Demo](https://pinaruglum.github.io/figma2html-react-js/)
+[Live Demo](https://pinargulum.github.io/figma2html-react-js/)
 
 Static HTML/CSS Output
 
